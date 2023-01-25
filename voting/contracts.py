@@ -12,6 +12,8 @@ def approval_program():
             App.globalPut(Bytes("VoteEnd"), Btoi(Txn.application_args[3])),
             # adding voting token
             App.globalPut(Bytes("VotingToken"), Txn.application_args[4]),
+            App.globalPut(Bytes("YesCount"), Int(0)),
+            App.globalPut(Bytes("NoCount"), Int(0)),
             Return(Int(1)),
         ]
     )
@@ -29,14 +31,12 @@ def approval_program():
                     get_vote_of_sender.hasValue(),
                     get_vote_of_sender.value() == Bytes("Yes") or Bytes("No") or Bytes("Abstain"),
                 ),
-                App.globalPut(
-                    If(get_vote_of_sender.value() == Bytes("Yes"))
-                    .Then(App.globalPut(choice, choice_tally - AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken")))))
-                    .ElseIf(get_vote_of_sender.value() == Bytes("No"))
-                    .Then(App.globalPut(choice, choice_tally + AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken")))))
-                    .ElseIf(get_vote_of_sender.value() == Bytes("Abstain"))
-                    .Then(App.globalPut(choice, choice_tally)),
-                ),
+                If(get_vote_of_sender.value() == Bytes("Yes"))
+                .Then(App.globalPut(Bytes("YesCount"), App.globalGet(Bytes("YesCount")) - Int(AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken"))))))
+                .ElseIf(get_vote_of_sender.value() == Bytes("No"))
+                .Then(App.globalPut(Bytes("NoCount"), Btoi(App.globalGet("NoCount")) + Btoi(AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken"))))))
+                .ElseIf(get_vote_of_sender.value() == Bytes("Abstain"))
+                .Then(Return(Int(1))),
             ),
             Return(Int(1)),
         ]
@@ -49,10 +49,9 @@ def approval_program():
         )
     )
 
-    choice = Txn.application_args[1]
-    choice_tally = App.globalGet(choice)
     on_vote = Seq(
         [
+
             Assert(
                 And(
                     # requirement for the vote sender to have at least 1000 voting tokens
