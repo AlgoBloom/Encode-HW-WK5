@@ -27,10 +27,15 @@ def approval_program():
                 And(
                     Global.round() <= App.globalGet(Bytes("VoteEnd")),
                     get_vote_of_sender.hasValue(),
+                    get_vote_of_sender.value() == Bytes("Yes") or Bytes("No") or Bytes("Abstain"),
                 ),
                 App.globalPut(
-                    get_vote_of_sender.value(),
-                    App.globalGet(get_vote_of_sender.value()) - Int(1),
+                    If(get_vote_of_sender.value() == Bytes("Yes"))
+                    .Then(App.globalPut(choice, choice_tally + AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken")))))
+                    .ElseIf(get_vote_of_sender.value() == Bytes("No"))
+                    .Then(App.globalPut(choice, choice_tally - AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken")))))
+                    .ElseIf(get_vote_of_sender.value() == Bytes("Abstain"))
+                    .Then(App.globalPut(choice, choice_tally)),
                 ),
             ),
             Return(Int(1)),
