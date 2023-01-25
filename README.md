@@ -5,3 +5,6 @@
     b. vote method yes or no or abstain
     c. vote count increased by amount of ENB user holds
         i. if user opts out decreased by same
+
+
+AssetParam.
