@@ -47,12 +47,13 @@ def intToBytes(i):
 def createApp(
     client,
     sender_addr,
-    sender_pk
+    sender_pk,
+    voting_asa,
 ) -> int:
 
     approval, clear = getContracts(client)
 
-    globalSchema = transaction.StateSchema(num_uints=4, num_byte_slices=1)
+    globalSchema = transaction.StateSchema(num_uints=4, num_byte_slices=2)
     localSchema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
 
     status = client.status()
@@ -66,6 +67,7 @@ def createApp(
         intToBytes(regEnd),
         intToBytes(voteBegin),
         intToBytes(voteEnd),
+        voting_asa,
     ]
 
     txn = transaction.ApplicationCreateTxn(
@@ -136,10 +138,12 @@ def create_asa(secret_key, my_address):
 #### Function CALLS ####
 #######################
 AlgodClient = getAlgodClient()
-create_asa(sk_1, my_address)
+asa = create_asa(sk_1, my_address)
+print(asa)
 app = createApp(
     client=AlgodClient,
     sender_addr=my_address,
     sender_pk=pk_1,
+    voting_asa=asa,
 )
 print(app)
