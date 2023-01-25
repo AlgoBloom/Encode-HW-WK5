@@ -40,6 +40,10 @@ def getContracts(client: AlgodClient) -> Tuple[bytes, bytes]:
 
     return APPROVAL_PROGRAM, CLEAR_STATE_PROGRAM
 
+# convert 64 bit integer i to byte string
+def intToBytes(i):
+    return i.to_bytes(8, "big")
+
 def createApp(
     client,
     sender_addr,
@@ -51,9 +55,17 @@ def createApp(
     globalSchema = transaction.StateSchema(num_uints=4, num_byte_slices=1)
     localSchema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
 
+    status = client.status()
+    regBegin = status["last-round"] + 10
+    regEnd = regBegin + 10
+    voteBegin = regEnd + 1
+    voteEnd = voteBegin + 10
+
     app_args = [
-        # encodes the sender address as the soulbound address
-        encoding.decode_address(sender_addr),
+        intToBytes(regBegin),
+        intToBytes(regEnd),
+        intToBytes(voteBegin),
+        intToBytes(voteEnd),
     ]
 
     txn = transaction.ApplicationCreateTxn(
