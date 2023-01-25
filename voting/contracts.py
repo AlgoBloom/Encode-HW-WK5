@@ -31,9 +31,9 @@ def approval_program():
                 ),
                 App.globalPut(
                     If(get_vote_of_sender.value() == Bytes("Yes"))
-                    .Then(App.globalPut(choice, choice_tally + AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken")))))
-                    .ElseIf(get_vote_of_sender.value() == Bytes("No"))
                     .Then(App.globalPut(choice, choice_tally - AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken")))))
+                    .ElseIf(get_vote_of_sender.value() == Bytes("No"))
+                    .Then(App.globalPut(choice, choice_tally + AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken")))))
                     .ElseIf(get_vote_of_sender.value() == Bytes("Abstain"))
                     .Then(App.globalPut(choice, choice_tally)),
                 ),
