@@ -58,7 +58,9 @@ def approval_program():
             ),
             get_vote_of_sender,
             If(get_vote_of_sender.hasValue(), Return(Int(0))),
-            App.globalPut(choice, choice_tally + Int(1)),
+            If(get_vote_of_sender.value() == Bytes("Yes"))
+            .Then(App.globalPut(choice, choice_tally + AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken")))))
+            ,
             App.localPut(Int(0), Bytes("voted"), choice),
             Return(Int(1)),
         ]
