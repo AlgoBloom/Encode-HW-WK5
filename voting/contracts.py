@@ -26,8 +26,6 @@ def approval_program():
             If(
                 And(
                     Global.round() <= App.globalGet(Bytes("VoteEnd")),
-                    # requirement for the vote sender to have at least 1000 voting tokens
-                    Assert(AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken"))) >= Int(1000)),
                     get_vote_of_sender.hasValue(),
                 ),
                 App.globalPut(
@@ -52,6 +50,8 @@ def approval_program():
         [
             Assert(
                 And(
+                    # requirement for the vote sender to have at least 1000 voting tokens
+                    AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken"))) >= Int(1000),
                     Global.round() >= App.globalGet(Bytes("VoteBegin")),
                     Global.round() <= App.globalGet(Bytes("VoteEnd")),
                 )
@@ -60,7 +60,10 @@ def approval_program():
             If(get_vote_of_sender.hasValue(), Return(Int(0))),
             If(get_vote_of_sender.value() == Bytes("Yes"))
             .Then(App.globalPut(choice, choice_tally + AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken")))))
-            ,
+            .ElseIf(get_vote_of_sender.value() == Bytes("No"))
+            .Then(App.globalPut(choice, choice_tally - AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken")))))
+            .ElseIf(get_vote_of_sender.value() == Bytes("Abstain"))
+            .Then(App.globalPut(choice, choice_tally)),
             App.localPut(Int(0), Bytes("voted"), choice),
             Return(Int(1)),
         ]
