@@ -27,7 +27,7 @@ def approval_program():
                 And(
                     Global.round() <= App.globalGet(Bytes("VoteEnd")),
                     # requirement for the vote sender to have at least 1000 voting tokens
-                    AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken"))) >= Int(1000),
+                    Assert(AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken"))) >= Int(1000)),
                     get_vote_of_sender.hasValue(),
                 ),
                 App.globalPut(
