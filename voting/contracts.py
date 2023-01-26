@@ -21,20 +21,23 @@ def approval_program():
     is_creator = Txn.sender() == App.globalGet(Bytes("Creator"))
 
     get_vote_of_sender = App.localGetEx(Int(0), App.id(), Bytes("voted"))
+    get_asset_holding = AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken")))
 
     on_closeout = Seq(
         [
             get_vote_of_sender,
+            get_asset_holding,
             If(
                 And(
                     Global.round() <= App.globalGet(Bytes("VoteEnd")),
                     get_vote_of_sender.hasValue(),
+                    get_asset_holding.hasValue(),
                     get_vote_of_sender.value() == Bytes("Yes") or Bytes("No") or Bytes("Abstain"),
                 ),
                 If(get_vote_of_sender.value() == Bytes("Yes"))
-                .Then(App.globalPut(Bytes("YesCount"), App.globalGet(Bytes("YesCount")) - Int(AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken"))))))
+                .Then(App.globalPut(Bytes("YesCount"), App.globalGet(Bytes("YesCount")) - get_asset_holding.value()))
                 .ElseIf(get_vote_of_sender.value() == Bytes("No"))
-                .Then(App.globalPut(Bytes("NoCount"), Btoi(App.globalGet("NoCount")) + Btoi(AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken"))))))
+                .Then(App.globalPut(Bytes("NoCount"), App.globalGet(Bytes("NoCount")) + get_asset_holding.value()))
                 .ElseIf(get_vote_of_sender.value() == Bytes("Abstain"))
                 .Then(Return(Int(1))),
             ),
@@ -51,24 +54,26 @@ def approval_program():
 
     on_vote = Seq(
         [
-
+            get_vote_of_sender,
+            get_asset_holding,
             Assert(
                 And(
-                    # requirement for the vote sender to have at least 1000 voting tokens
-                    AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken"))) >= Int(1000),
                     Global.round() >= App.globalGet(Bytes("VoteBegin")),
                     Global.round() <= App.globalGet(Bytes("VoteEnd")),
+                    get_vote_of_sender.hasValue(),
+                    get_asset_holding.hasValue(),
+                    get_vote_of_sender.value() == Bytes("Yes") or Bytes("No") or Bytes("Abstain"),
+                    # requirement for the vote sender to have at least 1000 voting tokens
+                    get_asset_holding.value() >= Int(1000),
                 )
             ),
-            get_vote_of_sender,
-            If(get_vote_of_sender.hasValue(), Return(Int(0))),
             If(get_vote_of_sender.value() == Bytes("Yes"))
-            .Then(App.globalPut(choice, choice_tally + AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken")))))
+            .Then(App.globalPut(Bytes("YesCount"), App.globalGet(Bytes("YesCount")) + get_asset_holding.value()))
             .ElseIf(get_vote_of_sender.value() == Bytes("No"))
-            .Then(App.globalPut(choice, choice_tally - AssetHolding.balance(Int(0), App.globalGet(Bytes("VotingToken")))))
+            .Then(App.globalPut(Bytes("NoCount"), App.globalGet(Bytes("NoCount")) - get_asset_holding.value()))
             .ElseIf(get_vote_of_sender.value() == Bytes("Abstain"))
-            .Then(App.globalPut(choice, choice_tally)),
-            App.localPut(Int(0), Bytes("voted"), choice),
+            .Then(Return(Int(1))),
+            App.localPut(Int(0), Bytes("voted"), Int(1)),
             Return(Int(1)),
         ]
     )
