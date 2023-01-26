@@ -53,7 +53,7 @@ def createApp(
 
     approval, clear = getContracts(client)
 
-    globalSchema = transaction.StateSchema(num_uints=4, num_byte_slices=2)
+    globalSchema = transaction.StateSchema(num_uints=6, num_byte_slices=2)
     localSchema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
 
     status = client.status()
